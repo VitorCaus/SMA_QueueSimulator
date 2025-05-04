@@ -8,7 +8,7 @@ public class SimulatedQueue {
   
   private String name = "";
   private int servers;
-  private int capacity = 50;
+  private int capacity = -1;
   private double firstArrival = -1;
 
   private double arrivalMin = -1;
@@ -18,8 +18,7 @@ public class SimulatedQueue {
 
   private int customers;
   private int losses;
-  private double[] times = new double[50];
-  private List<Double> stateTimes = new ArrayList<>();
+  private double[] times = new double[5000];
 
   private ArrayList<NextPassageQueue> nextQueues = new ArrayList<>();
 
@@ -40,13 +39,6 @@ public class SimulatedQueue {
   }
 
   public void accumStateTime(double time){
-    // if(stateTimes.size() == customers){
-    //   stateTimes.add(customers, time);
-    // }
-    // else{
-    //   stateTimes.set(customers, stateTimes.get(customers) + time);
-    // }
-    // stateTimes.add(customers, time);
     times[customers] += time;
   }
 
@@ -86,10 +78,6 @@ public class SimulatedQueue {
     return times;
   }
 
-  public List<Double> getStateTimes() {
-    return stateTimes;
-  }
-
   public List<NextPassageQueue> getNextQueues() {
     return this.nextQueues;
   }
@@ -111,8 +99,8 @@ public class SimulatedQueue {
   }
 
   public void setCapacity(int capacity) {
-    this.capacity = capacity > 0 ? capacity : 50;
-    this.times = new double[capacity];
+    this.capacity = capacity;
+    this.times = new double[capacity + 1];
     // this.stateTimes = new ArrayList<>(capacity == -1 ? 10: capacity + 1);
   }
 

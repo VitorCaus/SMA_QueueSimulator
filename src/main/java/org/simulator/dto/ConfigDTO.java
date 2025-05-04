@@ -1,5 +1,6 @@
 package org.simulator.dto;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -7,10 +8,10 @@ import org.simulator.SimulatedQueue;
 
 public class ConfigDTO {
   private Map<String, SimulatedQueue> queues;
-  private List<NetworkDTO> network;
+  private List<NetworkDTO> network = new ArrayList<>();
   private Map<String, Double> arrivals;
   private List<Double> randomValues;
-  private int randomPerSeed;
+  private int randomCount;
 
   public Map<String, SimulatedQueue> getQueues() {
     return queues;
@@ -28,8 +29,8 @@ public class ConfigDTO {
     return randomValues;
   }
 
-  public int getRandomPerSeed() {
-    return randomPerSeed;
+  public int getRandomCount() {
+    return randomCount;
   }
 
   public void setQueues(Map<String, SimulatedQueue> queues) {
@@ -48,7 +49,7 @@ public class ConfigDTO {
     this.randomValues = randomValues;
   }
 
-  public void setRandomPerSeed(int randomPerSeed) {
-    this.randomPerSeed = randomPerSeed;
+  public void setRandomCount(int randomCount) {
+    this.randomCount = randomCount;
   }
 }

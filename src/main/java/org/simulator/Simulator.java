@@ -19,7 +19,7 @@ public class Simulator {
   public static final long RANDOM_C = 12345;
   public static final double RANDOM_M = Math.pow(2, 31) -1;
   private static double previousRandom = RANDOM_SEED;
-  private static int randomPerSeed;
+  private static int randomCount;
 
   //Random numbers for validation with Simulator.jar
   private static Queue<Double> randomValues;
@@ -32,7 +32,13 @@ public class Simulator {
   private static List<SimulatedQueue> queues = new LinkedList<>();
 
   public static void main(String[] args){
-    configureSimulator("./src/main/resources/config.yml");
+    if(args.length == 0){
+      System.out.println("Error: usage = java -jar ./target/queue-simulator.jar <config.yml>");
+      return;
+    }
+    configureSimulator(args[0]);
+    // configureSimulator("src/main/resources/config.yml");
+
 
     //Add first arrivals
     queues.forEach(queue -> {
@@ -48,19 +54,24 @@ public class Simulator {
   //Generate next random number following Linear Congruential Method
   public static double nextRandom(){
     if(randomValues != null){
-      return randomValues.size() > 0 ? randomValues.poll() : 0;
+      return randomValues.size() > 0 ? randomValues.poll() : 0.99;
     }
+    randomCount--;
     previousRandom = ((RANDOM_A * previousRandom) + RANDOM_C) % RANDOM_M;
     return previousRandom / RANDOM_M;
   }
 
   //Start simulation
   public static void simulate(){
-    int countRandom = randomPerSeed;
+    System.out.println("---==| SIMULATION STARTED |==---\n");
+    while(randomCount > 0 || (randomValues != null && !randomValues.isEmpty())){
+      Event event = scheduler.poll();
 
-    while((randomValues != null && randomValues.size() > 0) || (randomValues == null && countRandom > 0)){
-    // while(countRandom-- > 0){
-      Event event = nextEvent();
+      if(event == null){
+        System.out.println("Scheduler is empty - Simulation finished.");
+        break;
+      }
+
       //Calls method according to event type
       switch (event.getType()) {
         case ARRIVAL: arrival(event); break;
@@ -68,20 +79,9 @@ public class Simulator {
         case PASSAGE: passage(event); break;
         default: System.out.printf("Error: Unknown event type %s\n", event.getType());
       }
-
-      if(randomValues == null){
-        countRandom--;
-      }
     }
   }
 
-  /*
-   * Get next event from scheduler (by shortest time) 
-  */
-  public static Event nextEvent(){
-    System.out.println(scheduler.toString());
-    return scheduler.poll();
-  }
 
   /*
    * ARRIVAL EVENT HANDLING
@@ -96,13 +96,12 @@ public class Simulator {
       destination.in();
       if (destination.Status() <= destination.Servers()){
         SimulatedQueue nextQueue = getPassageQueue(destination);
-        if(nextQueue != null){
-          //Schedule a passage to nextQueue
-          scheduler.add(new Event(globalTime + timeGenerator(destination.getExitMin(), destination.getExitMax()), EventType.PASSAGE, destination, nextQueue));
-        } else {
-          //Schedule an exit
-          scheduler.add(new Event(globalTime + timeGenerator(destination.getExitMin(), destination.getExitMax()), EventType.EXIT, destination, null));
-        }
+        scheduler.add(new Event(
+          globalTime + timeGenerator(destination.getExitMin(), destination.getExitMax()), 
+          nextQueue != null ? EventType.PASSAGE : EventType.EXIT, 
+          destination, 
+          nextQueue
+        ));
       }
     } else {
       //queue loss
@@ -124,13 +123,12 @@ public class Simulator {
     //If there are more clients than servers
     if (origin.Status() >= origin.Servers()){
       SimulatedQueue nextQueue = getPassageQueue(origin);
-      if(nextQueue != null){
-        //Schedule a passage to nextQueue
-        scheduler.add(new Event(globalTime + timeGenerator(origin.getExitMin(), origin.getExitMax()), EventType.PASSAGE, origin, nextQueue));
-      } else {
-        //Schedule an exit
-        scheduler.add(new Event(globalTime + timeGenerator(origin.getExitMin(), origin.getExitMax()), EventType.EXIT, origin, null));
-      }
+      scheduler.add(new Event(
+        globalTime + timeGenerator(origin.getExitMin(), origin.getExitMax()), 
+        nextQueue != null ? EventType.PASSAGE : EventType.EXIT, 
+        origin, 
+        nextQueue
+      ));
     }
   }
 
@@ -139,21 +137,29 @@ public class Simulator {
     SimulatedQueue origin = event.getOriginQueue();
     SimulatedQueue destination = event.getDestinationQueue();
     origin.out();
+
+    //schedule event leaving the origin queue
     if(origin.Status() >= origin.Servers()){
       SimulatedQueue nextQueue = getPassageQueue(origin);
-      if(nextQueue != null){
-        //Schedule a passage to nextQueue
-        scheduler.add(new Event(globalTime + timeGenerator(origin.getExitMin(), origin.getExitMax()), EventType.PASSAGE, origin, nextQueue));
-      } else {
-        //Schedule an exit
-        scheduler.add(new Event(globalTime + timeGenerator(origin.getExitMin(), origin.getExitMax()), EventType.EXIT, origin, null));
-      }
+      scheduler.add(new Event(
+        globalTime + timeGenerator(origin.getExitMin(), origin.getExitMax()), 
+        nextQueue != null ? EventType.PASSAGE : EventType.EXIT, 
+        origin, 
+        nextQueue
+      ));
     }
     
+    //schedule event going to destination queue
     if(destination.Capacity() < 0 || destination.Status() < destination.Capacity()){
       destination.in();
       if(destination.Status() <= destination.Servers()){
-        scheduler.add(new Event(globalTime + timeGenerator(destination.getExitMin(), destination.getExitMax()), EventType.EXIT, destination, null));
+        SimulatedQueue nextQueue = getPassageQueue(destination);
+        scheduler.add(new Event(
+          globalTime + timeGenerator(destination.getExitMin(), destination.getExitMax()), 
+          nextQueue != null ? EventType.PASSAGE : EventType.EXIT, 
+          destination, 
+          nextQueue
+        ));
       }
     }
     else{
@@ -191,11 +197,9 @@ public class Simulator {
   private static SimulatedQueue getPassageQueue(SimulatedQueue queue){
     double sum = 0.0;
     double prob = nextRandom();
-
     for(NextPassageQueue nextQueue : queue.getNextQueues()){
       sum += nextQueue.getProbability();
       if(prob < sum){
-        System.out.println("Queue " + queue.getName() + " Next: " + nextQueue.getNextQueue() == null ? nextQueue.getNextQueue().getName() : null + " (probability: " + nextQueue.getProbability() + "sum: " + sum + ")");
         return nextQueue.getNextQueue();
       }
     }
@@ -211,7 +215,11 @@ public class Simulator {
     
     for(SimulatedQueue queue : queues){
       System.out.println("-----------------------------------------------------");
-      System.out.printf("Queue %s (G/G/%d/%d):\n", queue.getName(), queue.Servers(), queue.Capacity());
+      System.out.printf("Queue %s (G/G/%d%s):\n", 
+        queue.getName(), 
+        queue.Servers(),
+        queue.Capacity() > 0 ? String.format("/%d", (queue.Capacity())) : ""
+      );
       printQueue(queue);
       System.out.printf("\nLosses in Queue %s: %d\n", queue.getName(), queue.Losses());
     }
@@ -225,10 +233,12 @@ public class Simulator {
       System.out.printf("Arrival: %f - %f\n", queue.getArrivalMin(), queue.getArrivalMax());
     System.out.printf("Exit: %f - %f\n\n", queue.getExitMin(), queue.getExitMax());
     System.out.printf("%-10s %-20s %-20s\n", "Queue", "State Time", "Time (Probability)");
-    for (int i = 0; i <= queue.getTimes().length; i++) {
-        if (queue.getTimes()[i] == 0) break;
-        String probability = String.format("%.2f%%", (queue.getTimes()[i] * 100) / globalTime);
-        System.out.printf("%-10d %-20.4f %-25s\n", i, queue.getTimes()[i], probability);
+    for (int i = 0; i < queue.getTimes().length; i++) {
+      if (queue.getTimes()[i] <= 1e-4){ 
+        break;
+      }
+      String probability = String.format("%.2f%%", (queue.getTimes()[i] * 100) / globalTime);
+      System.out.printf("%-10d %-20.4f %-25s\n", i, queue.getTimes()[i], probability);
     }
   }
 
@@ -247,7 +257,7 @@ public class Simulator {
 
       //configure random values
       randomValues = data.getRandomValues() != null ? new LinkedList<>(data.getRandomValues()) : null;
-      randomPerSeed = data.getRandomPerSeed() > 0 ? data.getRandomPerSeed() : -1;
+      randomCount = data.getRandomCount() > 0 && data.getRandomValues() == null ? data.getRandomCount() : -1;
 
       //configure queues and their first arrvals
       for(String key : configQueues.keySet()){
@@ -261,15 +271,18 @@ public class Simulator {
       for(NetworkDTO network : configNetwork){
         SimulatedQueue origin = configQueues.get(network.getOrigin());
         SimulatedQueue destination = configQueues.get(network.getDestination());
+        if(destination == null){
+          continue;
+        }
         origin.addNextQueue(destination, network.getProbability());
       }
 
       //order queues networks by probability
-      // for(SimulatedQueue queue : queues){
-      //   if(queue.getNextQueues() != null){
-      //     queue.getNextQueues().sort((a, b) -> Double.compare(a.getProbability(), b.getProbability()));
-      //   }
-      // }
+      for(SimulatedQueue queue : queues){
+        if(queue.getNextQueues() != null){
+          queue.getNextQueues().sort((a, b) -> Double.compare(a.getProbability(), b.getProbability()));
+        }
+      }
 
     } catch (FileNotFoundException e) {
       e.printStackTrace();

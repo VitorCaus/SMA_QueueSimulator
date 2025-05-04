@@ -1,36 +1,19 @@
-#==============================================================================
-#  EXAMPLE
-#  Write '#' to input comments
-#==============================================================================
+#--------------------------------------------
 #
-#  HOW TO EDIT THIS FILE
-#  
-#  To simulate with pseudo-random numbers automatically generated, use the options 'randomValuesPerSeed' and 'seeds'
-#    randomValuesPerSeed: <value> (it is only used if the option 'seeds' is declared)
-#    seeds: (list of seed values used to automatically generate the pseudo-random numbers) 
-#    - 1
-#    - 2
-#  
-#  To simulate with a given list of pseudo-random numbers, use option 'randomValues'
-#    randomValues: (list of pseudo-random numbers to be used during the simulation)
-#    - 0.2176
-#    - 0.0103
-#    - 0.1109
-#  
-#  IMPORTANT:
-#    * If the option 'seeds' is used, 'randomValues' is ignored. In this case, delete 'randomValues'
-#      and its list of pseudo-random numbers
-#  
-#  The remainder details in this file is self-explained. Good-luck! :-)
-#  
-#  DO NOT DELETE THE NEXT LINE STARTED BY '!'
+# - To make an infinite queue, remove its 'capacity' # field 
+# - If 'randomValues' field is informed,  
+# 'randomCount' will be ignored
+#
+#
+#
+#
+#--------------------------------------------
 arrivals: 
    Q1: 2.0
 
 queues: 
    Q1: 
       servers: 1
-      capacity: 5
       arrivalMin: 2.0
       arrivalMax: 4.0
       exitMin: 1.0
@@ -40,79 +23,76 @@ queues:
       capacity: 5
       exitMin: 4.0
       exitMax: 8.0
-   # Q3: 
-   #    servers: 2
-   #    capacity: 10
-   #    exitMin: 5.0
-   #    exitMax: 15.0
+   Q3: 
+      servers: 2
+      capacity: 10
+      exitMin: 5.0
+      exitMax: 15.0
 
 network: 
 -  origin: Q1
+   destination: Q2
    probability: 0.8
 -  origin: Q1
-   destination: Q2
+   destination: Q3
    probability: 0.2
-# -  origin: Q2
-#    destination: Q1
-#    probability: 0.3
-# -  origin: Q2
-#    destination: Q2
-#    probability: 0.5
-# -  origin: Q2
-#    probability: 0.2
-# -  origin: Q3
-#    destination: Q3
-#    probability: 0.7
-# -  origin: Q3
-#    probability: 0.3
+-  origin: Q2
+   destination: Q1
+   probability: 0.3
+-  origin: Q2
+   destination: Q2
+   probability: 0.5
+-  origin: Q3
+   destination: Q3
+   probability: 0.7
 
-
-randomValues: 
-- 0.3
-- 0.4
-- 0.1
-- 0.9
-- 0.9
-- 0.1
-- 0.3
-- 0.4
-- 0.1
-- 0.9
-- 0.9
-- 0.1
-- 0.3
-- 0.4
-- 0.1
-- 0.9
-- 0.9
-- 0.1
-- 0.3
-- 0.4
-- 0.1
-- 0.9
-- 0.9
-- 0.1
-- 0.3
-- 0.4
-- 0.1
-- 0.9
-- 0.9
-- 0.1
-- 0.3
-- 0.4
-- 0.1
-- 0.9
-- 0.9
-- 0.1
-- 0.3
-- 0.4
-- 0.1
-- 0.9
-- 0.9
-- 0.1
-- 0.3
-- 0.4
-- 0.1
-- 0.9
-- 0.9
-- 0.1
+randomCount: 100000
+# randomValues: 
+# - 0.3
+# - 0.4
+# - 0.1
+# - 0.9
+# - 0.9
+# - 0.1
+# - 0.3
+# - 0.4
+# - 0.1
+# - 0.9
+# - 0.9
+# - 0.1
+# - 0.3
+# - 0.4
+# - 0.1
+# - 0.9
+# - 0.9
+# - 0.1
+# - 0.3
+# - 0.4
+# - 0.1
+# - 0.9
+# - 0.9
+# - 0.1
+# - 0.3
+# - 0.4
+# - 0.1
+# - 0.9
+# - 0.9
+# - 0.1
+# - 0.3
+# - 0.4
+# - 0.1
+# - 0.9
+# - 0.9
+# - 0.1
+# - 0.3
+# - 0.4
+# - 0.1
+# - 0.9
+# - 0.9
+# - 0.1
+# - 0.3
+# - 0.4
+# - 0.1
+# - 0.9
+# - 0.9
+# - 0.1
